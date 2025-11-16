@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 লুডু টুর্নামেন্ট</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --red-color: #F44336; --green-color: #4CAF50; --yellow-color: #FFEB3B; --blue-color: #2196F3;
+            --dark-bg: #1C1C1E; --surface-color: #2C2C2E; --surface-light: #3A3A3C;
+            --primary-text: #e6edf3; --brand-color: #30b0ff;
+            --gradient-brand: linear-gradient(45deg, #00e5ff, #0077ff);
+            --brand-gold-color: #FFC107;
+        }
+        body { background-color: #0d1117; color: var(--primary-text); font-family: 'Noto Sans Bengali', sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; min-height: 100vh; font-size: 15px; box-sizing: border-box;}
+        
+        .container { 
+            width: 100%; max-width: 450px; border: 3px solid var(--brand-gold-color);
+            border-radius: 20px; padding: 15px; box-shadow: 0 0 20px rgba(255, 193, 7, 0.2);
+            box-sizing: border-box; background-color: var(--dark-bg);
+        }
+
+        .page { display: none; } .page.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .auth-page-container { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 90vh; }
+        #auth-page .header { text-align: center; margin-bottom: 25px; }
+        #auth-page .header .dice-icon { font-size: 32px; }
+        #auth-page .header h1 { color: var(--primary-text); font-size: 24px; font-weight: 700; margin-top: 5px; background: none; -webkit-background-clip: unset; background-clip: unset; text-shadow: none; }
+        .auth-container { background-color: #2C2C2E; padding: 25px; border-radius: 20px; width: 100%; max-width: 380px; }
+        .auth-tabs { display: flex; border-bottom: 1px solid #444; margin-bottom: 25px; }
+        .tab-link { background: none; border: none; color: #888; font-size: 16px; padding: 10px 15px; cursor: pointer; flex-grow: 1; border-bottom: 3px solid transparent; }
+        .tab-link.active { color: var(--brand-gold-color); border-bottom-color: var(--brand-gold-color); font-weight: 700; }
+        #login-form h2, #register-form h2 { font-size: 18px; text-align: center; color: var(--primary-text); margin-bottom: 20px; }
+        .auth-form { display: none; } .auth-form.active { display: block; }
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group .icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
+        .input-group input { width: 100%; padding: 14px 14px 14px 45px; border-radius: 12px; border: 1px solid #444; background-color: #1C1C1E; color: var(--primary-text); box-sizing: border-box; font-size: 15px; }
+        .input-group input:focus { border-color: var(--brand-gold-color); outline: none; }
+        .auth-container .button { width: 100%; padding: 14px; border: none; border-radius: 12px; background: var(--brand-gold-color); color: #000; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: all 0.3s; }
+
+        .header h1 { background: var(--gradient-brand); -webkit-background-clip: text; background-clip: text; color: transparent; text-align: center; font-size: 28px; font-weight: 900; margin-bottom: 25px; text-shadow: 0 0 20px rgba(48, 176, 255, 0.3); }
+        h2 { font-size: 22px; text-align: center; } 
+        h3 { font-size: 18px; color: var(--brand-color); margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .section-title { text-align: center; }
+        .button { width: 100%; padding: 14px; border: none; border-radius: 12px; background: var(--gradient-brand); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: transform 0.2s, box-shadow 0.3s; text-shadow: 0 0 5px rgba(0,0,0,0.5); box-sizing: border-box; }
+        .button:hover { filter: brightness(1.1); }
+        .button:active { transform: scale(0.98); }
+        .button:disabled { background: #555; cursor: not-allowed; }
+        .app-container { background-color: transparent; padding: 0; border-radius: 0; box-shadow: none; }
+        .home-header { text-align: center; margin-bottom: 20px; padding: 15px; background: var(--surface-color); border-radius: 15px; border: 1px solid #333;}
+        
+        .nav-menu { display: flex; justify-content: space-around; background-color: #2C2C2E; padding: 10px 5px; border-radius: 50px; margin-top: 20px; position: sticky; bottom: 15px; z-index: 100; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6); border: 1px solid #444;}
+        .nav-button { background: transparent; border: none; color: #aaa; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 20px; width: 100%; transition: color 0.3s, background-color 0.3s; }
+        .nav-emoji { font-size: 24px; line-height: 1; }
+        .nav-button.active { color: var(--brand-gold-color); }
+        
+        #earning-page .earning-header h1 { background: none; -webkit-background-clip: unset; background-clip: unset; color: var(--primary-text); font-size: 22px; text-shadow: none; text-align: center; }
+        .balance-display { background-color: var(--surface-color); border-radius: 15px; padding: 25px 20px; text-align: center; margin-bottom: 25px; border: 1px solid #444; }
+        .shiba-logo-emoji { font-size: 60px; margin-bottom: 10px; line-height: 1; }
+        .balance-display p { margin: 0; font-size: 16px; color: #ccc; }
+        .balance-amount { color: var(--brand-gold-color); font-size: 38px; margin: 10px 0; font-weight: 700; }
+        .btn-golden { background: var(--brand-gold-color); color: #111; font-weight: bold; }
+        .btn-green { background: #4CAF50; }
+        .history-title { text-align: center; font-size: 16px; color: #ccc; margin-top: 30px; border-bottom: none; }
+        #shibainu-history-container li { background-color: var(--surface-color); padding: 12px 15px; border-left: 3px solid #4CAF50; }
+        #shibainu-history-container .history-item { display: flex; justify-content: space-between; align-items: center; }
+        #shibainu-history-container .date { font-size: 12px; color: #888; }
+        #shibainu-history-container .amount { font-weight: bold; color: #4CAF50; }
+        
+        #profile-page .header h1 { color: var(--primary-text); background: none; -webkit-background-clip: unset; background-clip: unset; text-shadow: none; }
+
+        .telegram-home-link { display: block; text-align: center; text-decoration: none; margin: 20px auto; background: linear-gradient(45deg, #0088cc, #00aaff); padding: 12px; font-size: 15px; border-radius: 12px; color: white; }
+
+        .tournament-list-container { display: flex; flex-direction: column; align-items: center; gap: 20px; max-height: 60vh; overflow-y: auto; padding: 10px; }
+        .tournament-card { background: #1C1C1E; width: 100%; max-width: 320px; border-radius: 25px; padding: 20px; border: 2px solid var(--brand-gold-color); box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); text-align: center; box-sizing: border-box; }
+        .tournament-card h3 { margin-top: 0; margin-bottom: 20px; font-size: 20px; color: var(--primary-text); border-bottom: 1px solid #444; }
+        .card-details { margin: 15px 0; font-size: 15px; }
+        .card-details-item { display: flex; justify-content: space-between; padding: 10px; border-radius: 8px; flex-wrap: wrap; }
+        .card-details-item:nth-child(odd) { background-color: rgba(255,255,255,0.05); }
+        .card-details-item span:first-child { color: #aaa; }
+        .card-details-item span:last-child { font-weight: bold; color: var(--brand-gold-color); text-shadow: 0 0 8px rgba(255, 215, 0, 0.5); }
+        .countdown-timer { background-color: var(--surface-light); padding: 10px; border-radius: 8px; font-weight: bold; margin: 20px 0; letter-spacing: 1.5px; font-size: 16px;}
+
+        .profile-box, .action-box { background-color: var(--surface-light); padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #333;}
+        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .list { list-style: none; padding: 0 } 
+        .list li { background-color: var(--surface-color); padding: 12px; margin-bottom: 8px; border-radius: 10px; font-size: 14px; border-left: 3px solid var(--brand-color); }
+        .game-page-container { padding: 5px; }
+        .ludo-header h1 { font-size: 1.8rem; margin-bottom: 10px; color: var(--brand-color); text-align: center;}
+        .ludo-board-container { width: 100%; max-width: 420px; aspect-ratio: 1 / 1; background-color: #fff; padding: 10px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.6); margin: 0 auto; }
+        .ludo-board { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); width: 100%; height: 100%; gap: 2px; background-color: #555; position: relative; }
+        .ludo-cell { background-color: #ffffff; position: relative; display: flex; justify-content: center; align-items: center; }
+        .player-base { padding: 10px; box-sizing: border-box; border-radius: 12px; display: flex; justify-content: center; align-items: center; }
+        .player-base-inner { background-color: rgba(255,255,255,0.4); border-radius: 10px; width: 80%; height: 80%; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15%; padding: 15%; box-sizing: border-box; }
+        #red-base { grid-area: 1 / 1 / span 6 / span 6; background-color: var(--red-color); }
+        #green-base { grid-area: 1 / 10 / span 6 / span 6; background-color: var(--green-color); }
+        #blue-base { grid-area: 10 / 1 / span 6 / span 6; background-color: var(--blue-color); }
+        #yellow-base { grid-area: 10 / 10 / span 6 / span 6; background-color: var(--yellow-color); }
+        #center-home { grid-area: 7 / 7 / span 3 / span 3; background-color: #444; }
+        .ludo-piece { width: 100%; height: 100%; border-radius: 50%; z-index: 10; box-shadow: inset 0 -3px 4px rgba(0,0,0,0.4), 0 2px 5px rgba(0,0,0,0.5); border: 2px solid rgba(0,0,0,0.2); transition: all 0.1s linear; box-sizing: border-box; position: relative; }
+        .ludo-piece.inactive { display: none; }
+        .ludo-piece.on-path { position: absolute; width: 80%; height: 80%; }
+        .ludo-piece.movable { cursor: pointer; animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); filter: brightness(1.3); } }
+        .piece-red { background-color: var(--red-color); } .piece-green { background-color: var(--green-color); } .piece-yellow { background-color: var(--yellow-color); } .piece-blue { background-color: var(--blue-color); }
+        .safe-spot { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'%3E%3Cpath d='M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 65%; }
+        .path-red { background-color: #f44336B3; } .path-green { background-color: #4caf50B3; } .path-blue { background-color: #2196f3B3; } .path-yellow { background-color: #ffeb3bB3; }
+        .ludo-game-controls { width: 100%; max-width: 420px; text-align: center; background-color: var(--surface-light); padding: 20px; border-radius: 12px; box-sizing: border-box; margin: 20px auto 0; }
+        #ludo-dice-container { width: 60px; height: 60px; margin: 0 auto 15px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 40px; font-weight: bold; background-color: #f5f5f5; color: #212121; }
+        .rolling { animation: dice-roll-animation 0.25s ease-out; }
+        @keyframes dice-roll-animation { 0% { transform: scale(1.0) rotate(0deg); } 50% { transform: scale(1.2) rotate(180deg); } 100% { transform: scale(1.0) rotate(360deg); } }
+        #ludo-game-info { margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; min-height: 30px; text-shadow: 0 0 8px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center;}
+        .modal-content { background-color: var(--surface-light); padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #333;}
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: 700; cursor: pointer; }
+        .modal-content input, .modal-content select { width:100%; font-size: 16px; padding: 12px; box-sizing:border-box; text-align: center; margin-bottom: 15px; border-radius: 10px; border: 1px solid #444; background-color: #1e1e1e; color: #fff; }
+        .payment-info { background-color: var(--surface-color); padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .admin-number { display: flex; justify-content: space-between; align-items: center; background-color: #1a1a1a; padding: 10px 15px; border-radius: 8px; }
+        .copy-btn { background: var(--brand-color); color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        /* === BNB Address Style Update === */
+        .admin-number span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; margin-right: 10px; }
+
+        #loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 9999; display: none; justify-content: center; align-items: center; }
+        .loader-spinner { border: 6px solid #f3f3f3; border-top: 6px solid var(--brand-gold-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #custom-toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 10000; left: 50%; top: 30px; transform: translate(-50%, -100px); transition: all 0.5s; border-left: 5px solid var(--brand-gold-color);}
+        #custom-toast.show { visibility: visible; transform: translate(-50%, 0); }
+        .drop-in-animation { animation: drop-in 0.5s ease-out; }
+        @keyframes drop-in { 0% { transform: translateY(-20px) scale(1.2) rotate(0deg); opacity: 0; } 50% { transform: translateY(0) scale(0.9) rotate(180deg); opacity: 1; } 100% { transform: scale(1) rotate(360deg); } }
+        .spin-home-piece { animation: spin-home 0.6s linear; }
+        @keyframes spin-home { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        .notice-board { background: linear-gradient(145deg, rgba(48, 176, 255, 0.1), rgba(0, 119, 255, 0.1)); border: 1px solid var(--brand-color); border-radius: 15px; padding: 15px; margin-bottom: 20px; box-shadow: 0 0 10px rgba(48, 176, 255, 0.2); }
+        .notice-board h3 { margin-top: 0; color: var(--brand-color); text-align: center; border-bottom: none; }
+        .notice-board p { margin-bottom: 0; color: #eee; font-size: 14px; text-align: center; }
+    
+        /* --- নতুন এডমিন প্যানেলের স্টাইল --- */
+        #admin-panel {
+            display: none; /* ডিফল্টভাবে লুকানো থাকবে */
+            width: 100%; max-width: 450px;
+            padding: 20px; box-sizing: border-box;
+            margin-top: 20px; border: 2px solid var(--brand-color);
+            border-radius: 15px; background-color: var(--surface-color);
+        }
+        #admin-panel h2 { color: var(--brand-color); }
+        #admin-panel h3 { color: var(--brand-gold-color); border-bottom: none; font-size: 16px; }
+        #admin-panel ul { list-style: none; padding-left: 0; max-height: 150px; overflow-y: auto;}
+        #admin-panel li { background-color: var(--surface-light); padding: 8px; border-radius: 5px; margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <div id="custom-toast"></div>
+    <div id="loader-overlay"><div class="loader-spinner"></div></div>
+
+    <div class="container">
+        <!-- Auth Page -->
+        <div id="auth-page" class="page active">
+            <div class="auth-page-container">
+                <div class="header"> <span class="dice-icon">🎲</span> <h1>লুডু টুর্নামেন্ট</h1> </div>
+                <div class="auth-container">
+                    <div class="auth-tabs"><button class="tab-link active" data-form="login-form">লগইন</button><button class="tab-link" data-form="register-form">রেজিস্টার</button></div>
+                    <div id="login-form" class="auth-form active"><h2>লগইন করুন</h2><div class="input-group"><span class="icon">👤</span><input type="text" id="login-name" placeholder="আপনার নাম" required></div><div class="input-group"><span class="icon">🔒</span><input type="password" id="login-password" placeholder="পাসওয়ার্ড" required></div><button class="button" id="login-button">লগইন</button></div>
+                    <div id="register-form" class="auth-form"><h2>রেজিস্টার করুন</h2><div class="input-group"><span class="icon">👤</span><input type="text" id="register-name" placeholder="নতুন নাম দিন" required></div><div class="input-group"><span class="icon">🔒</span><input type="password" id="register-password" placeholder="নতুন পাসওয়ার্ড দিন" required></div><button class="button" id="register-button">রেজিস্টার</button></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App Interface -->
+        <div id="app-wrapper" class="page">
+            <div id="home-page" class="page active">
+                <div class="home-header"><h2 id="home-username"></h2><p id="home-balance"></p></div>
+                <div class="notice-board"><h3>📢 নোটিশ বোর্ড</h3><p id="notice-content">লোড হচ্ছে...</p></div>
+                <a id="telegram-home-link" href="#" target="_blank" class="telegram-home-link" style="display: none;">🪆 হেল্পলাইন টেলিগ্রাম গ্রুপ জয়েন্ট করুন 🪆</a>
+                <h3 class="section-title">চলমান টুর্নামেন্ট</h3>
+                <div class="tournament-list-container"><div id="tournament-list"></div></div>
+            </div>
+            <div id="earning-page" class="page">
+                <div class="earning-header"><h1>🪆 SHIB ইনকাম করুন বিজ্ঞাপন দেখে 🪆</h1></div>
+                <div class="balance-display"><div class="shiba-logo-emoji">🦊</div><p>আপনার SHIBAINU ব্যালেন্স</p><h2 id="shibainu-balance-display" class="balance-amount">0</h2></div>
+                <button class="button btn-golden" id="watch-ad-btn">SHIBAINU আয় করুন</button><button class="button btn-green" id="shibainu-transfer-btn">ব্যালেন্স ট্রান্সফার</button>
+                <h3 class="history-title">ট্রান্সফার ইতিহাস</h3><ul id="shibainu-history-container" class="list"></ul>
+            </div>
+            <div id="profile-page" class="page">
+                 <div class="header"><h1>🏦প্রোফাইল🏦</h1></div>
+                 <div class="profile-box"><h2 id="profile-username" style="text-align: center; margin-top: 0;"></h2><p style="text-align:center; font-size: 24px; margin: 10px 0;">ব্যালেন্স: <strong id="profile-balance" style="color:var(--brand-color)">0.00</strong> ৳</p><div class="action-buttons"><button class="button" id="deposit-btn">Deposit</button><button class="button" id="withdraw-btn">Withdraw</button></div></div>
+                 <div class="action-box"><h3 style="text-align: center; border-bottom: none;">ম্যাচ ইতিহাস</h3><ul id="match-history-container" class="list" style="max-height: 200px; overflow-y: auto;"></ul></div>
+                 <div class="action-box"><h3 style="text-align: center; border-bottom: none;">লেনদেনের ইতিহাস</h3><ul id="history-container" class="list" style="max-height: 200px; overflow-y: auto;"></ul></div>
+                 <button class="button" id="logout-button" style="background: #c94b4b;">লগ আউট</button>
+            </div>
+            <div class="nav-menu">
+                <button class="nav-button active" data-page="home-page"><span class="nav-emoji">🎲</span><span>Home</span></button>
+                <button class="nav-button" data-page="earning-page"><span class="nav-emoji">🦊</span><span>Earning</span></button>
+                <button class="nav-button" data-page="profile-page"><span class="nav-emoji">🏦</span><span>Profile</span></button>
+            </div>
+        </div>
+        
+        <!-- Other Pages and Modals -->
+        <div id="game-page" class="page"><div class="game-page-container"><div class="ludo-header"><h1 id="tournament-game-title">টুর্নামেন্ট ম্যাচ</h1></div><div class="ludo-board-container"><div id="ludo-board" class="ludo-board"></div></div><div class="ludo-game-controls"><div id="ludo-game-info"></div><div id="ludo-dice-container">🎲</div><button class="button" id="ludo-roll-dice-btn">ডাইস রোল করুন</button></div></div></div>
+        <div id="transaction-modal" class="modal"><div class="modal-content"><span class="close-button">&times;</span><h2 id="modal-title" style="margin-top:0;"></h2><div id="deposit-content" style="display: none;"><select id="deposit-method"><option value="" disabled selected>পেমেন্ট মাধ্যম বাছাই করুন</option><option value="Rocket">রকেট (Bangladesh)</option><option value="MBank">MBank (Kyrgyzstan)</option><option value="BNB">BNB (Crypto)</option></select><div id="rocket-deposit-info" class="payment-info" style="display: none;"><p><strong>নিচের রকেট নম্বরে Send Money করুন:</strong></p><div class="admin-number"><span id="rocket-number">...</span><button class="copy-btn" onclick="copyToClipboard(document.getElementById('rocket-number').innerText)">কপি</button></div></div><div id="mbank-deposit-info" class="payment-info" style="display: none;"><p><strong>নিচের MBank নম্বরে টাকা পাঠান:</strong></p><div class="admin-number"><span id="mbank-number">...</span><button class="copy-btn" onclick="copyToClipboard(document.getElementById('mbank-number').innerText)">কপি</button></div></div><div id="bnb-deposit-info" class="payment-info" style="display: none;"><p><strong>নিচের BNB এড্রেসে কয়েন সেন্ড করুন:</strong></p><div class="admin-number"><span id="bnb-address">...</span><button class="copy-btn" onclick="copyToClipboard(document.getElementById('bnb-address').innerText)">কপি</button></div></div><input type="number" id="deposit-amount" placeholder="আপনি কত টাকা পাঠিয়েছেন?"><input type="text" id="deposit-trx-id" placeholder="আপনার Transaction ID দিন"><button class="button" id="confirm-deposit-btn">অনুরোধ পাঠান</button></div><div id="withdraw-content" style="display: none;"><input type="number" id="withdraw-amount" placeholder="টাকার পরিমাণ লিখুন"><input type="text" id="withdraw-account-number" placeholder="আপনার অ্যাকাউন্ট নম্বর দিন"><button class="button" id="confirm-withdraw-btn">অনুরোধ পাঠান</button></div></div></div>
+        <div id="shibainu-transfer-modal" class="modal"><div class="modal-content"><span class="close-button">&times;</span><h2 style="margin-top:0;">SHIBAINU ট্রান্সফার</h2><p style="font-size: 14px; color: #ccc;">কনভার্সন রেট: 11,000 SHIB = 10 ৳</p><input type="number" id="shibainu-transfer-amount" placeholder="SHIBAINU পরিমাণ লিখুন"><button class="button" id="confirm-shibainu-transfer">ট্রান্সফার করুন</button></div></div>
+        <div id="start-game-confirm-modal" class="modal"><div class="modal-content" style="text-align: center;"><p style="font-size: 16px; line-height: 1.6; margin-bottom: 25px;">🎲লুডু গেম শুরু হয়ে গেলে আপনি যদি কেটে বেরিয়ে পড়েন তাহলে ওই গেমটি হেরে যাবেন। আরও বিস্তারিত জানতে টেলিগ্রাম গ্রুপে জয়েন করতে পারেন🎲</p><div class="action-buttons"><button class="button" id="confirm-back-btn" style="background: #555;">BACK</button><button class="button" id="confirm-ok-btn">OK</button></div></div></div>
+        
+        <!-- New Payment Choice Modal -->
+        <div id="payment-choice-modal" class="modal"><div class="modal-content" style="text-align: center;"><span class="close-button">&times;</span><h2 style="margin-top:0;">কি দিয়ে পেমেন্ট করতে চান?</h2><div class="action-buttons" id="payment-options-container" style="flex-direction: column;"></div></div></div>
+        
+        <div id="winner-modal" class="modal"><div class="modal-content" style="text-align: center;"><h2 id="winner-modal-title">🎉 টুর্নামেন্ট সমাপ্ত 🎉</h2><p id="winner-modal-body" style="font-size: 1.2rem; margin: 20px 0; line-height: 1.6;"></p><p style="font-size: 0.9rem; color: #ccc;">আপনাকে হোম পেজে ফিরিয়ে নেওয়া হচ্ছে...</p></div></div>
+    </div>
+
+    <!-- ===== নতুন এডমিন প্যানেল HTML ===== -->
+    <div id="admin-panel">
+        <h2>👑 Admin Panel 👑</h2>
+        <div>
+            <h3>অনলাইন ইউজার: <span id="online-users-count">0</span></h3>
+            <ul id="online-users-list"></ul>
+        </div>
+        <hr style="border-color: #444; margin: 20px 0;">
+        <div>
+            <h3>চলমান খেলা:</h3>
+            <ul id="active-games-list"></ul>
+        </div>
+    </div>
+    
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyD_Pqi8KtJ0A-fOV8ly7Fh9kURazKsFj6s", authDomain: "lodutunament-34229.firebaseapp.com", databaseURL: "https://lodutunament-34229-default-rtdb.firebaseio.com", projectId: "lodutunament-34229", storageBucket: "lodutunament-34229.appspot.com", messagingSenderId: "872176763453", appId: "1:872176763453:web:1ba323dbaa1e296e7f2054" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let activeTimers = {}, currentGameData = { tournamentId: null }, siteSettings = {};
+
+        function showToast(message) { const t=document.getElementById('custom-toast');t.textContent=message;t.className='show';setTimeout(()=>{t.className=t.className.replace('show','')},3000); }
+        function showPage(pageId) { document.querySelectorAll('.container > .page').forEach(p => p.classList.remove('active')); document.getElementById(pageId)?.classList.add('active'); }
+        function showSubPage(pageId) { document.querySelectorAll('#app-wrapper .page').forEach(p => p.classList.remove('active')); document.getElementById(pageId)?.classList.add('active'); }
+        function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => showToast("কপি করা হয়েছে।")); }
+
+        document.querySelectorAll(".nav-button").forEach(b => b.addEventListener("click", () => { const pageId = b.dataset.page; document.querySelectorAll(".nav-button").forEach(el => el.classList.remove('active')); b.classList.add('active'); showSubPage(pageId); }));
+        document.querySelectorAll(".tab-link").forEach(tab => tab.addEventListener("click", () => { document.querySelectorAll(".tab-link, .auth-form").forEach(el => el.classList.remove("active")); tab.classList.add("active"); document.getElementById(tab.dataset.form).classList.add("active"); }));
+        
+        window.onload = () => { const user = sessionStorage.getItem("loggedInUser"); if (user) showAppScreen(user); else showPage('auth-page'); };
+
+        document.getElementById("login-button").addEventListener("click", () => { const n=document.getElementById("login-name").value.trim(), p=document.getElementById("login-password").value; if(!n||!p)return showToast("নাম ও পাসওয়ার্ড দিন।"); db.ref("users/"+n).once("value").then(s=>{ if(s.exists()&&s.val().password===p){sessionStorage.setItem("loggedInUser",n);showAppScreen(n);}else{showToast("ভুল নাম বা পাসওয়ার্ড!");}});});
+        document.getElementById("register-button").addEventListener("click", () => { const n=document.getElementById("register-name").value.trim(), p=document.getElementById("register-password").value; if(!n||!p)return showToast("নাম ও পাসওয়ার্ড দিন।"); if(/[.#$\[\]]/.test(n))return showToast("নামে বিশেষ অক্ষর ব্যবহার করা যাবে না।"); db.ref("users/"+n).once("value").then(s=>{ if(s.exists()){showToast("এই নামে অ্যাকাউন্ট রয়েছে।");}else{db.ref("users/"+n).set({password:p,balance:0, shibainuBalance:0}).then(()=>{showToast("রেজিস্ট্রেশন সফল!");});}});});
+        
+        // ===== নতুন এডমিন প্যানেল চালু করার ফাংশন =====
+        function initializeAdminPanel() {
+            // অনলাইন ইউজারদের তালিকা দেখানোর জন্য
+            const onlineUsersRef = db.ref('onlineUsers');
+            onlineUsersRef.on('value', snapshot => {
+                const listEl = document.getElementById('online-users-list');
+                const countEl = document.getElementById('online-users-count');
+                listEl.innerHTML = ''; 
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    const userCount = Object.keys(users).length;
+                    countEl.innerText = userCount;
+                    Object.keys(users).forEach(user => {
+                        const li = document.createElement('li');
+                        li.textContent = user;
+                        listEl.appendChild(li);
+                    });
+                } else {
+                    countEl.innerText = '0';
+                    listEl.innerHTML = '<li>এখন কেউ অনলাইনে নেই</li>';
+                }
+            });
+
+            // চলমান গেমের তালিকা দেখানোর জন্য
+            const activeGamesRef = db.ref('tournaments').orderByChild('status').equalTo('playing');
+            activeGamesRef.on('value', snapshot => {
+                const listEl = document.getElementById('active-games-list');
+                listEl.innerHTML = '';
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        const game = childSnapshot.val();
+                        const players = game.players ? Object.keys(game.players).join(', ') : 'N/A';
+                        const li = document.createElement('li');
+                        li.textContent = `${game.name} (খেলোয়াড়: ${players})`;
+                        listEl.appendChild(li);
+                    });
+                } else {
+                    listEl.innerHTML = '<li>এখন কোনো খেলা চলছে না</li>';
+                }
+            });
+        }
+
+        function showAppScreen(username) {
+            showPage('app-wrapper'); showSubPage('home-page'); 
+            loadUserProfile(username); loadTournaments(); loadTransactionHistory(username); 
+            loadMatchHistory(username); loadShibainuTransferHistory(username);
+            
+            // --- নতুন কোড: অনলাইন স্ট্যাটাস সেট করার জন্য ---
+            const onlineRef = db.ref(`onlineUsers/${username}`);
+            onlineRef.onDisconnect().remove();
+            onlineRef.set(true);
+
+            // --- নতুন কোড: যদি ইউজার 'Admin' হয়, তবে প্যানেল দেখাও ---
+            if (username === "Admin") {
+                document.getElementById("admin-panel").style.display = "block";
+                initializeAdminPanel();
+            }
+
+            db.ref("settings").on("value", s => { 
+                siteSettings = s.val() || {}; 
+                if(siteSettings.rocketNumber) document.getElementById('rocket-number').innerText=siteSettings.rocketNumber; 
+                if(siteSettings.mbankNumber) document.getElementById('mbank-number').innerText=siteSettings.mbankNumber; 
+                if(siteSettings.bnbAddress) document.getElementById('bnb-address').innerText=siteSettings.bnbAddress; 
+                document.getElementById('notice-content').innerText = siteSettings.notice || 'এখন কোনো নতুন নোটিশ নেই।'; 
+                const homeTelegramLink = document.getElementById('telegram-home-link');
+                if (siteSettings.telegramLink && siteSettings.telegramLink.trim() !== '') {
+                    homeTelegramLink.href = siteSettings.telegramLink;
+                    homeTelegramLink.style.display = 'block';
+                } else { homeTelegramLink.style.display = 'none'; }
+            }); 
+        }
+
+        function loadUserProfile(username) { db.ref("users/"+username).on("value", s => { if (s.exists()) { const d = s.val(); document.getElementById('home-username').innerHTML = `🎁 ${username} 🎁`; const balanceFormattedHome = (d.balance || 0).toFixed(2); document.getElementById("home-balance").innerHTML = `🏦 ব্যালেন্স 💵 ${balanceFormattedHome} 💶`; document.getElementById('profile-username').innerText = username; const balanceFormattedProfile = (d.balance || 0).toFixed(2); document.getElementById("profile-balance").innerText = balanceFormattedProfile; document.getElementById("shibainu-balance-display").innerText = new Intl.NumberFormat().format(d.shibainuBalance || 0); } }); }
+        function loadTransactionHistory(username) { db.ref("requests").orderByChild("username").equalTo(username).on("value", s => { const cont = document.getElementById("history-container"); cont.innerHTML = "<li>লোড হচ্ছে...</li>"; const reqs = []; if (s.exists()) { s.forEach(c => { const data = c.val(); if(data.type === 'deposit' || data.type === 'withdraw' || data.type === 'penalty') { reqs.push(data); } }); } if(reqs.length === 0) { cont.innerHTML = "<li>কোনো লেনদেন পাওয়া যায়নি।</li>"; return; } cont.innerHTML = ""; reqs.reverse().slice(0, 10).forEach(req => { const item = document.createElement("li"); const date = new Date(req.date).toLocaleString('bn-BD',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); let typeText, typeColor; if (req.type === 'deposit') { typeText = 'ডিপোজিট'; typeColor = '#28a745'; } else if (req.type === 'withdraw') { typeText = 'উইথড্র'; typeColor = '#dc3545'; } else if (req.type === 'penalty') { typeText = 'নিষ্ক্রিয়তার জন্য জরিমানা'; typeColor = '#ffc107'; } item.innerHTML = `<div><span>${typeText}</span><span style="float:right;color:${typeColor}">${req.type === 'withdraw' || req.type === 'penalty' ? '-' : '+'}${req.amount} ৳</span></div><div style="font-size:12px;color:#ccc;"><span>${date}</span><span style="float:right;">${req.status}</span></div>`; cont.appendChild(item); }); }); }
+        
+        function loadMatchHistory(username) { const cont = document.getElementById("match-history-container"); cont.innerHTML = "<li>লোড হচ্ছে...</li>"; db.ref(`users/${username}/matchHistory`).orderByChild("date").limitToLast(10).on("value", s => { if (!s.exists()) { cont.innerHTML = "<li>কোনো ম্যাচের ইতিহাস পাওয়া যায়নি।</li>"; return; } const matches = []; s.forEach(c => matches.push(c.val())); cont.innerHTML = ""; matches.reverse().forEach(match => { const item = document.createElement("li"); const date = new Date(match.date).toLocaleString('bn-BD',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); const rankColor = match.rank === '১ম' ? '#ffc107' : '#c0c0c0'; item.innerHTML = `<div style="font-weight: bold;"><span>${match.tournamentName}</span><span style="float:right; color: ${rankColor};">${match.rank} পুরস্কার: ${match.prize} ৳</span></div><div style="font-size:12px; color:#ccc; margin-top: 4px;"><span>এন্ট্রি ফি: ${match.entryFee} ৳</span><span style="float:right;">${date}</span></div>`; cont.appendChild(item); }); }); }
+        
+        function loadShibainuTransferHistory(username) { const cont = document.getElementById("shibainu-history-container"); cont.innerHTML = "<li>লোড হচ্ছে...</li>"; db.ref(`users/${username}/shibainuHistory`).orderByChild("date").limitToLast(10).on("value", s => { if (!s.exists()) { cont.innerHTML = "<li>কোনো ট্রান্সফার ইতিহাস পাওয়া যায়নি।</li>"; return; } const history = []; s.forEach(c => history.push(c.val())); cont.innerHTML = ""; history.reverse().forEach(item => { const li = document.createElement("li"); const date = new Date(item.date).toLocaleString('bn-BD',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); const shibFormatted = new Intl.NumberFormat().format(item.shibAmount); li.innerHTML = `<div class="history-item"><div><strong>SHIB to BDT</strong><div class="date">${date}</div></div><div class="amount">+${item.bdtAmount.toFixed(2)}৳ (${shibFormatted} SHIB)</div></div>`; cont.appendChild(li); }); }); }
+
+        function loadTournaments() { const list = document.getElementById("tournament-list"); Object.values(activeTimers).forEach(clearInterval); activeTimers = {}; db.ref("tournaments").orderByChild("status").equalTo("waiting").on("value", s => { list.innerHTML = ""; if (!s.exists()) { list.innerHTML = '<p style="text-align:center; color:#888;">এই মুহূর্তে কোনো টুর্নামেন্ট চালু নেই।</p>'; return; } s.forEach(cs => { const t = cs.val(), id = cs.key; const card = document.createElement("div"); card.className = "tournament-card"; card.id = `card-${id}`; let feeText = `<span>${t.entryFee||0} ৳</span>`; if (t.shibEntryFee && t.shibEntryFee > 0) { feeText += ` / <span>${new Intl.NumberFormat().format(t.shibEntryFee)} SHIB</span>`; } card.innerHTML = `<h3>${t.name}</h3><div class="card-details"><div class="card-details-item"><span>এন্ট্রি ফি:</span> <div>${feeText}</div></div><div class="card-details-item"><span>অ্যাডমিন ফি:</span> <span>${t.adminFee||0} ৳</span></div><div class="card-details-item"><span>১ম পুরস্কার:</span> <span>${t.firstPrize||0} ৳</span></div><div class="card-details-item"><span>২য় পুরস্কার:</span> <span>${t.secondPrize||0} ৳</span></div></div><div class="countdown-timer" id="timer-${id}"></div><div id="button-container-${id}"></div>`; list.appendChild(card); startTournamentCountdown(id, t); }); }); }
+        function startTournamentCountdown(id, tData) { const timerEl = document.getElementById(`timer-${id}`), btnContainer = document.getElementById(`button-container-${id}`); if (!timerEl || !tData.gameDate || !tData.gameTime) { if(timerEl) timerEl.innerHTML = "সময় নির্ধারিত হয়নি"; return; } const targetDate = new Date(`${tData.gameDate}T${tData.gameTime}`); const updateTimer = () => { if(!document.getElementById(`timer-${id}`)) { clearInterval(activeTimers[id]); return; } const dist = targetDate.getTime() - new Date().getTime(); const user = sessionStorage.getItem("loggedInUser"); const isJoined = tData.players && tData.players[user]; if (dist < 1000) { clearInterval(activeTimers[id]); timerEl.innerHTML = "ম্যাচ শুরু করার জন্য প্রস্তুত"; if (isJoined) { btnContainer.innerHTML = `<button class="button start-game-btn" data-id="${id}">গেম শুরু করুন</button>`; } else { btnContainer.innerHTML = `<button class="button" disabled>সময় শেষ</button>`; } } else { const hrs = String(Math.floor((dist % 864e5) / 36e5)).padStart(2, '0'), mins = String(Math.floor((dist % 36e5) / 6e4)).padStart(2, '0'), secs = String(Math.floor((dist % 6e4) / 1e3)).padStart(2, '0'); timerEl.innerHTML = `শুরু হতে বাকি: ${hrs}:${mins}:${secs}`; if (!isJoined && (tData.players ? Object.keys(tData.players).length : 0) < tData.playerLimit) { btnContainer.innerHTML = `<button class="button join-btn" data-id="${id}">যোগ দিন</button>`; } else if (isJoined) { btnContainer.innerHTML = `<button class="button" disabled style="background:#dc3545">আপনি জয়েন করেছেন</button>`; } else { btnContainer.innerHTML = `<button class="button" disabled>সম্পূর্ণ</button>`; } } }; updateTimer(); activeTimers[id] = setInterval(updateTimer, 1000); }
+        
+        document.getElementById("tournament-list").addEventListener("click", e => { const user = sessionStorage.getItem("loggedInUser"); if(e.target.classList.contains("start-game-btn")){ const id = e.target.dataset.id; currentGameData.tournamentId = id; document.getElementById('start-game-confirm-modal').style.display = 'flex'; return; } if(e.target.classList.contains("join-btn")){ const id = e.target.dataset.id; db.ref(`tournaments/${id}`).once('value').then(snap => { if (!snap.exists()) return; const tData = snap.val(); currentGameData.tournamentId = id; const paymentOptionsContainer = document.getElementById('payment-options-container'); paymentOptionsContainer.innerHTML = ''; if (tData.entryFee > 0) { paymentOptionsContainer.innerHTML += `<button class="button" data-fee="${tData.entryFee}" data-currency="bdt">Pay ${tData.entryFee} ৳</button>`; } if (tData.shibEntryFee > 0) { paymentOptionsContainer.innerHTML += `<button class="button" style="background: #4CAF50;" data-fee="${tData.shibEntryFee}" data-currency="shib">Pay ${new Intl.NumberFormat().format(tData.shibEntryFee)} SHIB</button>`; } if (paymentOptionsContainer.innerHTML !== '') { document.getElementById('payment-choice-modal').style.display = 'flex'; } else { showToast('এই টুর্নামেন্টে যোগ দেওয়া যাচ্ছে না।'); } }); } });
+
+        const paymentChoiceModal = document.getElementById('payment-choice-modal');
+        paymentChoiceModal.querySelector('.close-button').addEventListener('click', () => paymentChoiceModal.style.display = 'none');
+        document.getElementById('payment-options-container').addEventListener('click', e => { if (e.target.tagName !== 'BUTTON') return; paymentChoiceModal.style.display = 'none'; const user = sessionStorage.getItem("loggedInUser"); const currency = e.target.dataset.currency; const fee = parseFloat(e.target.dataset.fee); const tournamentId = currentGameData.tournamentId; let balancePath = currency === 'bdt' ? `users/${user}/balance` : `users/${user}/shibainuBalance`; db.ref(balancePath).transaction(bal => { if ((bal || 0) >= fee) return bal - fee; return; }).then(res => { if (res.committed) { db.ref(`tournaments/${tournamentId}/players/${user}`).set(true); showToast("টুর্নামেন্টে যোগ দিয়েছেন!"); } else { showToast(`অপর্যাপ্ত ${currency === 'bdt' ? 'ব্যালেন্স' : 'SHIB ব্যালেন্স'}।`); } }); });
+
+        const confirmModal = document.getElementById('start-game-confirm-modal');
+        document.getElementById('confirm-back-btn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
+        document.getElementById('confirm-ok-btn').addEventListener('click', () => { confirmModal.style.display = 'none'; document.getElementById('loader-overlay').style.display = 'flex'; db.ref('tournaments/' + currentGameData.tournamentId).update({ status: 'playing' }); db.ref('tournaments/' + currentGameData.tournamentId).once('value').then(s => { const tData = s.val(); const numPieces = tData.numPieces || 4; const humanPlayers = tData.players ? Object.keys(tData.players) : []; showPage('game-page'); document.getElementById('tournament-game-title').innerText = tData.name; const finalPlayers = []; const botNames = ["মানিক", "মনির", "হাসান", "Habib", "Kulak", "Manik", "muni", "babu", "selim", "Hasem", "Sujon", "Jahidul", "jahid", "Ritu", "Kasem", "khukumoni", "Samina", "marisa"].sort(() => 0.5 - Math.random()); humanPlayers.forEach(p => finalPlayers.push({username: p, isBot: false})); const botsNeeded = (tData.playerLimit || 2) - humanPlayers.length; for(let i=0; i<botsNeeded; i++) { finalPlayers.push({username: botNames.pop() || `বট ${i+1}`, isBot: true}); } LudoGame.startTournamentGame(finalPlayers, numPieces, tData); document.getElementById('loader-overlay').style.display = 'none'; }); });
+
+        function handlePrizeDistribution(winnerInfo, prizeType, prizeAmount, tournamentData) { if (!winnerInfo || winnerInfo.isBot) { if(winnerInfo) showToast(`${winnerInfo.username} ${prizeType} স্থান অধিকার করেছে।`); return; } const winnerUsername = winnerInfo.username; db.ref('users/' + winnerUsername + '/balance').transaction(balance => (balance || 0) + prizeAmount); db.ref(`users/${winnerUsername}/matchHistory`).push({ tournamentName: tournamentData.name, entryFee: tournamentData.entryFee, prize: prizeAmount, rank: prizeType, date: new Date().toISOString() }); showToast(`অভিনন্দন ${winnerUsername}! আপনি ${prizeType} পুরস্কার হিসেবে ${prizeAmount} ৳ জিতেছেন।`); }
+        
+        document.getElementById("logout-button").addEventListener("click", () => {
+            // --- নতুন কোড: লগআউট করার আগে অনলাইন তালিকা থেকে নাম মুছে ফেলা ---
+            const user = sessionStorage.getItem("loggedInUser");
+            if (user) {
+                db.ref(`onlineUsers/${user}`).remove();
+            }
+            sessionStorage.removeItem("loggedInUser");
+            window.location.reload();
+        });
+
+        const transModal = document.getElementById("transaction-modal");
+        document.getElementById("deposit-btn").addEventListener("click", () => { transModal.style.display="flex"; document.getElementById("deposit-content").style.display="block"; document.getElementById("withdraw-content").style.display="none"; document.getElementById("modal-title").innerText="Deposit"; });
+        document.getElementById("withdraw-btn").addEventListener("click", () => { transModal.style.display="flex"; document.getElementById("withdraw-content").style.display="block"; document.getElementById("deposit-content").style.display="none"; document.getElementById("modal-title").innerText="Withdraw"; });
+        document.querySelector("#transaction-modal .close-button").addEventListener("click", () => transModal.style.display = "none");
+        document.getElementById("confirm-deposit-btn").addEventListener("click", () => { const user=sessionStorage.getItem("loggedInUser"), data={username:user,date:new Date().toISOString(),status:"Pending",type:"deposit",method: document.getElementById("deposit-method").value, amount:parseFloat(document.getElementById("deposit-amount").value),trxId:document.getElementById("deposit-trx-id").value}; if(!data.method || !data.amount) return showToast("সকল তথ্য পূরণ করুন।"); db.ref("requests").push(data).then(() => { showToast("আপনার অনুরোধটি পাঠানো হয়েছে।"); transModal.style.display="none";}); });
+        document.getElementById("confirm-withdraw-btn").addEventListener("click", () => { const user=sessionStorage.getItem("loggedInUser"), data={username:user,date:new Date().toISOString(),status:"Pending",type:"withdraw",amount:parseFloat(document.getElementById("withdraw-amount").value),number:document.getElementById("withdraw-account-number").value}; if(!data.amount || !data.number) return showToast("সকল তথ্য পূরণ করুন।"); db.ref("requests").push(data).then(() => { showToast("আপনার অনুরোধটি পাঠানো হয়েছে।"); transModal.style.display="none";}); });
+        document.getElementById('deposit-method').addEventListener('change', e => { ['rocket','mbank','bnb'].forEach(id=>document.getElementById(`${id}-deposit-info`).style.display='none'); const method = e.target.value; const trxIdInput = document.getElementById('deposit-trx-id'); if(method) document.getElementById(`${method.toLowerCase()}-deposit-info`).style.display='block'; const showTrx = method === 'Rocket' || method === 'MBank' || method === 'BNB'; document.getElementById('deposit-amount').style.display = showTrx ? 'block' : 'none'; trxIdInput.style.display = showTrx ? 'block' : 'none'; document.getElementById('confirm-deposit-btn').style.display = showTrx ? 'block' : 'none'; if(method === 'BNB') trxIdInput.placeholder = 'আপনার Transaction Hash (TxID) দিন'; else if (method === 'MBank') trxIdInput.placeholder = 'আপনার Transaction Number দিন'; else trxIdInput.placeholder = 'আপনার Transaction ID দিন'; });
+        document.getElementById("watch-ad-btn").addEventListener("click", () => { if(siteSettings.adLink) { sessionStorage.setItem('adOpenedTime', Date.now()); window.open(siteSettings.adLink, "_blank"); } else { showToast("এখন কোনো বিজ্ঞাপন উপলব্ধ নেই।"); } });
+        window.addEventListener('focus', () => { const user=sessionStorage.getItem("loggedInUser"); if(!user)return; const adOpenTime = sessionStorage.getItem('adOpenedTime'); if(adOpenTime && (Date.now() - adOpenTime > 15000)){ const shibainuReward = siteSettings.shibainuAdReward || 100; db.ref(`users/${user}/shibainuBalance`).transaction(bal=>(bal||0)+shibainuReward).then(()=>showToast(`অভিনন্দন! আপনি ${shibainuReward} SHIB পেয়েছেন।`)); sessionStorage.removeItem('adOpenedTime'); }});
+        const shibainuModal = document.getElementById("shibainu-transfer-modal");
+        document.getElementById("shibainu-transfer-btn").addEventListener("click", () => { shibainuModal.style.display = "flex"; });
+        document.querySelector("#shibainu-transfer-modal .close-button").addEventListener("click", () => shibainuModal.style.display = "none");
+        
+        document.getElementById("confirm-shibainu-transfer").addEventListener("click", () => { const user=sessionStorage.getItem("loggedInUser"), shibAmount = parseFloat(document.getElementById('shibainu-transfer-amount').value); if(isNaN(shibAmount) || shibAmount < 11000) return showToast("ন্যূনতম 11,000 SHIB ট্রান্সফার করতে পারবেন।"); const bdtAmount = (shibAmount / 11000) * 10; db.ref(`users/${user}`).transaction(data => { if(data && (data.shibainuBalance || 0) >= shibAmount) { data.shibainuBalance -= shibAmount; data.balance = (data.balance || 0) + bdtAmount; return data; } return; }).then(r => { if(r.committed) { showToast("ট্রান্সফার সফল হয়েছে।"); const historyData = { bdtAmount, shibAmount, date: new Date().toISOString() }; db.ref(`users/${user}/shibainuHistory`).push(historyData); shibainuModal.style.display="none"; } else { showToast("অপর্যাপ্ত SHIBAINU ব্যালেন্স।"); } }); });
+        
+        const LudoGame = (() => { const boardEl=document.getElementById('ludo-board'), diceEl=document.getElementById('ludo-dice-container'), rollBtn=document.getElementById('ludo-roll-dice-btn'), infoEl=document.getElementById('ludo-game-info'); let playerMap={}, isBot={}, currentPlayers=[], winnersList=[], currentPlayerIndex, diceValue, gameState, piecePos, bonusTurn, activePieceCount, initialPlayerCount, tournamentData, inactivityTimer = null, presenceRef = null, activePlayersRef = null, isVsComputerMatch = false, consecutiveSixes = 0; const pieceEls={red:{},green:{},yellow:{},blue:{}}; const cellLayout=[{id:1,r:7,c:2},{id:2,r:7,c:3},{id:3,r:7,c:4},{id:4,r:7,c:5},{id:5,r:7,c:6},{id:6,r:6,c:7},{id:7,r:5,c:7},{id:8,r:4,c:7},{id:9,r:3,c:7},{id:10,r:2,c:7},{id:11,r:1,c:7},{id:12,r:1,c:8},{id:13,r:1,c:9},{id:14,r:2,c:9},{id:15,r:3,c:9},{id:16,r:4,c:9},{id:17,r:5,c:9},{id:18,r:6,c:9},{id:19,r:7,c:10},{id:20,r:7,c:11},{id:21,r:7,c:12},{id:22,r:7,c:13},{id:23,r:7,c:14},{id:24,r:7,c:15},{id:25,r:8,c:15},{id:26,r:9,c:15},{id:27,r:9,c:14},{id:28,r:9,c:13},{id:29,r:9,c:12},{id:30,r:9,c:11},{id:31,r:9,c:10},{id:32,r:10,c:9},{id:33,r:11,c:9},{id:34,r:12,c:9},{id:35,r:13,c:9},{id:36,r:14,c:9},{id:37,r:15,c:9},{id:38,r:15,c:8},{id:39,r:15,c:7},{id:40,r:14,c:7},{id:41,r:13,c:7},{id:42,r:12,c:7},{id:43,r:11,c:7},{id:44,r:10,c:7},{id:45,r:9,c:6},{id:46,r:9,c:5},{id:47,r:9,c:4},{id:48,r:9,c:3},{id:49,r:9,c:2},{id:50,r:9,c:1},{id:51,r:8,c:1},{id:52,r:7,c:1},{id:101,r:8,c:2},{id:102,r:8,c:3},{id:103,r:8,c:4},{id:104,r:8,c:5},{id:105,r:8,c:6},{id:106,r:8,c:7},{id:201,r:2,c:8},{id:202,r:3,c:8},{id:203,r:4,c:8},{id:204,r:5,c:8},{id:205,r:6,c:8},{id:206,r:7,c:8},{id:301,r:8,c:14},{id:302,r:8,c:13},{id:303,r:8,c:12},{id:304,r:8,c:11},{id:305,r:8,c:10},{id:306,r:8,c:9},{id:401,r:14,c:8},{id:402,r:13,c:8},{id:403,r:12,c:8},{id:404,r:11,c:8},{id:405,r:10,c:8},{id:406,r:9,c:8}]; const startCells={red:1,green:14,yellow:27,blue:40}, safeSpots=[1,9,14,22,27,35,40,49]; const mainPath=Array.from({length:52},(_,i)=>i+1); const playerPaths={red:[...mainPath.slice(0,51),101,102,103,104,105,106],green:[...mainPath.slice(13),...mainPath.slice(0,12),201,202,203,204,205,206],yellow:[...mainPath.slice(26),...mainPath.slice(0,25),301,302,303,304,305,306],blue:[...mainPath.slice(39),...mainPath.slice(0,38),401,402,403,404,405,406]}; function createBoard(){boardEl.innerHTML='';['red','green','yellow','blue'].forEach(c=>{const b=document.createElement('div');b.id=`${c}-base`;b.className='player-base';b.style.gridArea={red:'1/1/span 6/span 6',green:'1/10/span 6/span 6',blue:'10/1/span 6/span 6',yellow:'10/10/span 6/span 6'}[c];const i=document.createElement('div');i.className='player-base-inner';for(let k=1;k<=4;k++){const s=document.createElement('div');s.id=`${c}-home-${k}`;i.appendChild(s)}b.appendChild(i);boardEl.appendChild(b)});boardEl.innerHTML+='<div id="center-home" style="grid-area: 7/7/span 3/span 3;"></div>';cellLayout.forEach(p=>{const c=document.createElement('div');c.className='ludo-cell';c.id=`cell-${p.id}`;c.style.gridArea=`${p.r}/${p.c}`;if(safeSpots.includes(p.id))c.classList.add('safe-spot');if(p.id>100)c.classList.add(`path-${{1:'red',2:'green',3:'yellow',4:'blue'}[Math.floor(p.id/100)]}`);boardEl.appendChild(c)});Object.keys(startCells).forEach(c=>document.getElementById(`cell-${startCells[c]}`).classList.add(`path-${c}`))} function createPieces(){['red','green','yellow','blue'].forEach(c=>{for(let i=1;i<=4;i++){const p=document.createElement('div');p.className=`ludo-piece piece-${c}`;p.dataset.color=c;p.dataset.id=i;p.addEventListener('click',onPieceClick);pieceEls[c][i]=p}})} function setupGame(){currentPlayerIndex=0;gameState='roll';piecePos={};winnersList=[];consecutiveSixes=0;currentPlayers.forEach(c=>{piecePos[c]={};for(let i=1;i<=4;i++)piecePos[c][i]=(i<=activePieceCount)?'base':'inactive'});renderBoard();diceEl.textContent='🎲';checkIfBotTurn()} function renderBoard(){document.querySelectorAll('.ludo-cell,[id$="-home-1"],[id$="-home-2"],[id$="-home-3"],[id$="-home-4"]').forEach(c=>c.innerHTML='');for(const c of ['red','green','yellow','blue']){let h=1;for(let i=1;i<=4;i++){if(pieceEls[c][i]){const p=pieceEls[c][i],s=piecePos[c]?.[i];p.classList.remove('on-path','movable','inactive','spin-home-piece','drop-in-animation');if(s==='base'){const homeSlot=document.getElementById(`${c}-home-${h++}`);if(homeSlot)homeSlot.appendChild(p)}else if(s!=='finished'&&s!=='inactive'){const l=document.getElementById(`cell-${s}`);if(l)l.appendChild(p);p.classList.add('on-path')} else { p.classList.add('inactive'); }}}}}
+        function onRollDice() { if (gameState !== 'roll') return; clearTimeout(inactivityTimer); gameState = 'rolling'; rollBtn.disabled = true; diceEl.classList.add('rolling'); const flickerInterval = setInterval(() => { const randomFace = Math.floor(Math.random() * 6) + 1; diceEl.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][randomFace - 1]; }, 60); setTimeout(() => { clearInterval(flickerInterval); diceEl.classList.remove('rolling'); diceValue = Math.floor(Math.random() * 6) + 1; diceEl.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][diceValue - 1]; if (diceValue === 6) { consecutiveSixes++; } else { consecutiveSixes = 0; } if (consecutiveSixes === 3) { showToast("পর পর তিনবার ৬! চাল পচা গেলো।"); bonusTurn = false; setTimeout(switchPlayer, 1200); return; } gameState = 'move'; bonusTurn = diceValue === 6; const movable = getMovablePieces(currentPlayers[currentPlayerIndex]); if (movable.length === 0) { showToast("কোনো চাল দেওয়া সম্ভব নয়।"); setTimeout(switchPlayer, 1000); } else if (isBot[currentPlayers[currentPlayerIndex]]) { setTimeout(() => { const best = chooseBestMove(movable); movePiece(best.color, best.id); }, 1000); } else { updateTurnInfo('আপনার গুটি নির্বাচন করুন'); movable.forEach(p => pieceEls[p.color][p.id].classList.add('movable')); } }, 250); }
+        function onPieceClick(e){const p=e.currentTarget;if(piecePos[p.dataset.color][p.dataset.id]==='base'){p.classList.add('spin-home-piece');p.addEventListener('animationend',()=>p.classList.remove('spin-home-piece'),{once:true});}if(!p.classList.contains('movable')||gameState!=='move')return;movePiece(p.dataset.color,p.dataset.id)} function movePiece(c,id){gameState='moving';document.querySelectorAll('.movable').forEach(p=>p.classList.remove('movable'));updateTurnInfo();const pos=piecePos[c][id],pathResult=calculateNewPosition(c,pos,diceValue);if(pathResult.isPossible)animatePieceMove(pieceEls[c][id],pathResult,()=>postAnimationLogic(c,id,pathResult.pos,pathResult.finished))} function postAnimationLogic(c,id,n,f){piecePos[c][id]=f?'finished':n;let cap=false;if(!f&&n!=='finished')cap=handleCapture(n,c);renderBoard();if(checkForWin(c)){processWinner(c);return}if(bonusTurn||cap){showToast(cap?"গুটি কেটে বোনাস টার্ন!":"বোনাস টার্ন!");gameState='roll';checkIfBotTurn()}else{switchPlayer()}} async function animatePieceMove(p,pathResult,cb){const animPiece=p.cloneNode(true);if(p.parentElement)p.parentElement.appendChild(animPiece);p.style.opacity='0';if(!pathResult.path||pathResult.path.length===0){const startCell=document.getElementById(`cell-${pathResult.pos}`);if(startCell)startCell.appendChild(animPiece);animPiece.classList.add('drop-in-animation')}else{const lastCellId=pathResult.path[pathResult.path.length-1];for(const id of pathResult.path){const c=document.getElementById(`cell-${id}`);if(c){c.appendChild(animPiece);if(id===lastCellId)animPiece.classList.add('drop-in-animation')}await new Promise(r=>setTimeout(r,150))}}setTimeout(()=>{if(boardEl.contains(animPiece))animPiece.remove();p.style.opacity='1';cb()},500)} function getMovablePieces(c){return Object.keys(piecePos[c]||{}).map(id=>({color:c,id})).filter(p=>canMove(p.color,p.id))} function canMove(c,id){const p=piecePos[c][id];if(p==='finished'||p==='inactive')return false;if(p==='base')return diceValue===6;return calculateNewPosition(c,p,diceValue).isPossible} function handleCapture(p,a){if(!p||safeSpots.includes(p)||p>100)return false;let cap=false;for(const c of currentPlayers){if(c===a)continue;for(const id in piecePos[c]){if(piecePos[c][id]===p){piecePos[c][id]='base';bonusTurn=true;cap=true;break}}if(cap)break}return cap} function calculateNewPosition(c,pos,s){const p=playerPaths[c];if(pos==='base')return{pos:startCells[c],finished:false,isPossible:true,path:[]};const i=p.indexOf(pos);if(i===-1)return{isPossible:false};const nI=i+s;if(nI>=p.length)return{isPossible:false};const aP=p.slice(i+1,nI+1),isF=nI===p.length-1,fP=isF?'finished':p[nI];return{pos:fP,finished:isF,isPossible:true,path:aP}} 
+        function chooseBestMove(m) { const getScore = p => { const cP = piecePos[p.color][p.id]; const { pos: nP, finished } = calculateNewPosition(p.color, cP, diceValue); if (finished) return 100; if (nP && !safeSpots.includes(nP) && nP < 100) { for (const c of currentPlayers) if (c !== p.color && Object.values(piecePos[c]).includes(nP)) return 50; } if (cP === 'base') return 25; return playerPaths[p.color].indexOf(cP); }; const sortedMoves = m.sort((a, b) => getScore(b) - getScore(a)); if (isVsComputerMatch) { const winPercentage = tournamentData.userWinPercentage || 60; const userLosingChance = (100 - winPercentage) / 100; if (Math.random() < userLosingChance && sortedMoves.length > 1) { return sortedMoves[sortedMoves.length - 1]; } } return sortedMoves[0]; } 
+        function checkForWin(c){const finishedCount = Object.values(piecePos[c]).filter(p=>p==='finished').length; return finishedCount === activePieceCount; } function cleanUpListeners() { if(presenceRef) presenceRef.onDisconnect().cancel(); presenceRef.remove(); if(activePlayersRef) activePlayersRef.off(); clearTimeout(inactivityTimer); gameState = 'finished'; }
+        function processWinner(color) { const winnerInfo = playerMap[color]; if (!winnerInfo || winnersList.some(w => w.username === winnerInfo.username)) return; winnersList.push(winnerInfo); const winnerModal = document.getElementById('winner-modal'); const winnerModalTitle = document.getElementById('winner-modal-title'); const winnerModalBody = document.getElementById('winner-modal-body'); if (winnersList.length === 1) { handlePrizeDistribution(winnerInfo, '১ম', tournamentData.firstPrize || 0, tournamentData); if (initialPlayerCount <= 2) { rollBtn.disabled = true; db.ref('tournaments/' + currentGameData.tournamentId).update({ status: 'finished' }); cleanUpListeners(); winnerModalTitle.innerText = '🎉 অভিনন্দন! 🎉'; winnerModalBody.innerHTML = `বিজয়ী: <strong>${winnerInfo.username}</strong>`; winnerModal.style.display = 'flex'; setTimeout(() => window.location.reload(), 3000); return; } else { infoEl.textContent = `🎉 ${winnerInfo.username} ১ম স্থান!`; currentPlayers = currentPlayers.filter(p => p !== color); if (currentPlayers.length > 1) switchPlayer(); else if (currentPlayers.length === 1) processWinner(currentPlayers[0]); } } else if (winnersList.length === 2) { handlePrizeDistribution(winnerInfo, '২য়', tournamentData.secondPrize || 0, tournamentData); rollBtn.disabled = true; db.ref('tournaments/' + currentGameData.tournamentId).update({ status: 'finished' }); cleanUpListeners(); winnerModalTitle.innerText = '🎉 টুর্নামেন্ট সমাপ্ত 🎉'; winnerModalBody.innerHTML = `১ম স্থান: <strong>${winnersList[0].username}</strong><br>২য় স্থান: <strong>${winnersList[1].username}</strong>`; winnerModal.style.display = 'flex'; setTimeout(() => window.location.reload(), 3000); } }
+        function switchPlayer(){setTimeout(()=>{consecutiveSixes = 0; if(currentPlayers.length>0){currentPlayerIndex=(currentPlayerIndex+1)%currentPlayers.length;if(currentPlayerIndex>=currentPlayers.length)currentPlayerIndex=0;}gameState='roll';diceEl.textContent='🎲';checkIfBotTurn()},500)} function checkIfBotTurn(){if(gameState === 'finished' || currentPlayers.length === 0) return; updateTurnInfo(); const cPColor = currentPlayers[currentPlayerIndex]; const cPData = playerMap[cPColor]; rollBtn.disabled = isBot[cPColor]; clearTimeout(inactivityTimer); if(isBot[cPColor]) { setTimeout(onRollDice,1500); } else if (isVsComputerMatch) { inactivityTimer = setTimeout(() => applyPenalty(cPData.username), 120000); } } function applyPenalty(username) { showToast("নিষ্ক্রিয়তার জন্য 5৳জরিমানা করা হয়েছে।"); rollBtn.disabled = true; cleanUpListeners(); db.ref('users/' + username).transaction(data => { if (data) data.balance = (data.balance || 0) - 5; return data; }); db.ref('requests').push({username, amount: 5, date: new Date().toISOString(), status: 'Completed', type: 'penalty'}); const otherPlayerColor = currentPlayers.find(c => c !== Object.keys(playerMap).find(key => playerMap[key].username === username)); processWinner(otherPlayerColor); } function updateTurnInfo(m=''){if(!currentPlayers[currentPlayerIndex]) return; const cC=currentPlayers[currentPlayerIndex],cN=playerMap[cC].username,cH={red:'#f44336',green:'#4caf50',yellow:'#ffeb3b',blue:'#2196f3'};infoEl.style.color=cH[cC];if(m)infoEl.textContent=m;else infoEl.textContent=isBot[cC]?`${cN}-এর চাল...`:`${cN}-এর চাল`}
+        function startTournamentGame(players, numPieces, tData){ activePieceCount = numPieces; initialPlayerCount = players.length; tournamentData = tData; isVsComputerMatch = players.length === 2 && players.some(p => p.isBot) && players.some(p => !p.isBot); if (players.length === 2) { currentPlayers = ['blue', 'green']; playerMap = { 'blue': players[0], 'green': players[1] }; isBot = { 'blue': players[0].isBot, 'green': players[1].isBot }; } else { const colors=['red','green','yellow','blue']; currentPlayers=[]; playerMap={}; isBot={}; players.forEach((p,i)=>{if(i<colors.length){const c=colors[i];currentPlayers.push(c);playerMap[c]=p;isBot[c]=p.isBot}}); } const user = sessionStorage.getItem("loggedInUser"); const isUserInGame = players.some(p => p.username === user && !p.isBot); if (isUserInGame && !isVsComputerMatch) { presenceRef = db.ref(`tournaments/${currentGameData.tournamentId}/activePlayers/${user}`); activePlayersRef = db.ref(`tournaments/${currentGameData.tournamentId}/activePlayers`); presenceRef.onDisconnect().remove(); presenceRef.set(true); activePlayersRef.on('child_removed', (snapshot) => { if (gameState === 'finished') return; const disconnectedUser = snapshot.key; const myUsername = sessionStorage.getItem("loggedInUser"); if (disconnectedUser === myUsername) return; showToast(`${disconnectedUser} খেলা থেকে বেরিয়ে গেছে।`); const disconnectedPlayerColor = Object.keys(playerMap).find(key => playerMap[key].username === disconnectedUser); if (initialPlayerCount <= 2) { const myColor = Object.keys(playerMap).find(key => playerMap[key].username === myUsername); if (!winnersList.some(w => w.username === myUsername)) processWinner(myColor); } else { currentPlayers = currentPlayers.filter(c => c !== disconnectedPlayerColor); if (currentPlayers.length === 1 && !winnersList.some(w => w.username === playerMap[currentPlayers[0]].username)) { processWinner(currentPlayers[0]); } else if(currentPlayerIndex >= currentPlayers.length) { currentPlayerIndex = 0; switchPlayer(); } } }); } setupGame(); }
+        createBoard();createPieces();rollBtn.addEventListener('click',onRollDice);
+        return {startTournamentGame};
+        })();
+    </script>
+</body>
+</html>
